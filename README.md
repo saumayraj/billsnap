@@ -1,39 +1,70 @@
 # BillSnap Pro
 
-**Scan Bills into Clean PDF instantly!**
+**Scan Bills into Clean PDFs — with OCR, Expense Tracking & Cloud Storage**
 
-Upload multiple bill photos, preview them live, and convert them into scanner-style PDF documents.
+Upload bill photos, auto-crop & enhance them, generate scanner-quality PDFs, and track your expenses — all in one app.
 
 ## Features
 - 📸 Drag & drop multiple bill photos
-- 👁️ Live preview of uploaded images
-- ✨ Automatic image cropping and enhancement
-- 📄 Instant PDF generation
-- 📱 Fully mobile-responsive
-- ⚡ Works completely in-browser (no backend needed)
+- 👁️ Live preview with auto-crop & enhancement (Otsu thresholding)
+- 📄 Instant PDF generation (in-browser, no backend needed for basic use)
+- 🔐 User authentication (JWT-based register/login)
+- 🧠 OCR text extraction (Tesseract.js) — reads vendor, amount, date
+- 💰 Expense tracking with categories, tags, and date filtering
+- 📊 Expense summaries by daily / weekly / monthly / yearly period
+- 📧 Email integration (Nodemailer)
+- ☁️ Cloud storage support (Google Drive OAuth)
+- 🚀 Vercel-ready deployment
 
-## Technologies Used
-- HTML5
-- CSS3 (with Glass-morphism effects)
-- JavaScript (Canvas API for image processing)
-- jsPDF library for PDF generation
+## Tech Stack
+- **Frontend:** HTML5, CSS3 (Glassmorphism), Vanilla JS, jsPDF, Canvas API
+- **Backend:** Node.js, Express.js
+- **Database:** MongoDB (Mongoose)
+- **Auth:** JWT + bcryptjs
+- **OCR:** Tesseract.js
+- **PDF:** pdf-lib
+- **Email:** Nodemailer
 
-## How to Use
-1. Drag and drop bill photos or click to browse
-2. View live previews of your bills
-3. Click "Download PDF" to generate a clean PDF
-4. That's it! Your PDF is ready.
+## Setup
 
-## Deployment
+### 1. Install dependencies
+```bash
+npm install
+```
 
-### Vercel (Recommended)
+### 2. Configure environment
+```bash
+cp .env.example .env
+# Fill in your values in .env
+```
+
+### 3. Run locally
+```bash
+npm run dev
+```
+Frontend: http://localhost:8080  
+Backend API: http://localhost:5000
+
+## API Routes
+| Method | Route | Description |
+|--------|-------|-------------|
+| POST | /api/users/register | Register new user |
+| POST | /api/users/login | Login |
+| GET | /api/users/me | Get current user |
+| POST | /api/bills/upload | Upload & OCR bills |
+| GET | /api/bills | Get all user bills |
+| PATCH | /api/bills/:id | Update bill |
+| DELETE | /api/bills/:id | Delete bill |
+| POST | /api/bills/generate-pdf | Generate PDF from saved bills |
+| GET | /api/expenses | Get expenses (filterable) |
+| GET | /api/expenses/summary/:period | Expense summary |
+
+## Deployment (Vercel)
 ```bash
 npm i -g vercel
 vercel
 ```
-
-### Local Development
-Simply open `index.html` in your browser.
+Set environment variables in Vercel dashboard matching `.env.example`.
 
 ## License
 MIT

@@ -4,7 +4,7 @@
   "description": "Advanced bill scanning to PDF with OCR, expense tracking, and more",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently \"http-server\" \"nodemon api/server.js\"",
+    "dev": "concurrently \"npx http-server -p 8080 -c-1\" \"nodemon api/server.js\"",
     "start": "node api/server.js",
     "vercel-build": "echo 'Build complete'"
   },

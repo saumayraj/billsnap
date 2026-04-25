@@ -52,7 +52,7 @@ router.get('/summary/:period', auth, async (req, res) => {
         const expenses = await Expense.aggregate([
             {
                 $match: {
-                    userId: require('mongoose').Types.ObjectId(req.user.id),
+                    userId: new require('mongoose').Types.ObjectId(req.user.id),
                     date: { $gte: startDate }
                 }
             },

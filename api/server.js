@@ -3,6 +3,10 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const dns = require('dns');
+
+// Fix for Node.js v18+ SRV lookup issue with MongoDB Atlas
+dns.setDefaultResultOrder('ipv4first');
 
 dotenv.config();
 
@@ -22,6 +26,8 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/billsn
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 10000,
+    family: 4  // Force IPv4 — fixes SRV resolution on Node v24
 })
 .then(() => console.log('✅ MongoDB connected'))
 .catch(err => console.error('❌ MongoDB connection error:', err));
