@@ -1,0 +1,23 @@
+{
+  "name": "billsnap",
+  "version": "1.0.0",
+  "description": "Scan Bills into Clean PDF instantly",
+  "main": "index.html",
+  "scripts": {
+    "dev": "http-server",
+    "start": "http-server"
+  },
+  "keywords": [
+    "bills",
+    "scanner",
+    "pdf",
+    "document",
+    "image-processing"
+  ],
+  "author": "BillSnap Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/billsnap"
+  }
+}

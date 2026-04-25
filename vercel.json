@@ -1,0 +1,21 @@
+{
+  "name": "billsnap",
+  "version": 2,
+  "buildCommand": "echo 'BillSnap is a static site'",
+  "public": true,
+  "builds": [
+    {
+      "src": "index.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "env": {
+    "VERCEL_ENV": "production"
+  }
+}
