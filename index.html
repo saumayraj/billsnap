@@ -456,7 +456,77 @@
             transform: translateY(-2px) scale(0.98);
         }
 
-        .btn::before {
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: #f8fafc;
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-5px) scale(1.02);
+            background: rgba(255, 255, 255, 0.14);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:active {
+            transform: translateY(-2px) scale(0.98);
+        }
+
+        .camera-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 11, 38, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+
+        .camera-card {
+            width: min(720px, 100%);
+            max-width: 1000px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(79, 172, 254, 0.25);
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 40px 120px rgba(0, 0, 0, 0.35);
+            display: grid;
+            gap: 18px;
+            padding: 24px;
+        }
+
+        .camera-card video {
+            width: 100%;
+            aspect-ratio: 16 / 11;
+            border-radius: 20px;
+            background: black;
+            object-fit: contain;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .camera-controls {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .camera-note {
+            color: #cbd5e1;
+            font-size: 14px;
+            text-align: right;
+        }
+
+        .btn-container {
+            margin-top: 35px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
             content: '';
             position: absolute;
             top: 0;
@@ -829,10 +899,21 @@
                     </div>
                     
                     <div class="btn-container">
+                        <button class="btn btn-secondary" id="cameraBtn">📷 Capture Bill</button>
                         <button class="btn btn-primary" id="generateBtn">⬇️ Generate PDF</button>
                     </div>
                     <div class="status-message" id="statusMessage" style="margin-top:16px;font-size:14px;color:#cbd5e1;display:none;">
                         ⏳ Waiting for files...
+                    </div>
+                    <div id="cameraOverlay" class="camera-overlay" style="display:none;">
+                        <div class="camera-card">
+                            <video id="cameraVideo" autoplay playsinline muted></video>
+                            <div class="camera-controls">
+                                <button class="btn btn-secondary" id="capturePhotoBtn">📸 Capture</button>
+                                <button class="btn btn-primary" id="closeCameraBtn">✕ Close</button>
+                            </div>
+                            <div class="camera-note">Use your camera to snap a bill. The photo will be added instantly and can be exported to PDF.</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -936,13 +1017,19 @@
         const previewGrid = document.getElementById("previewGrid");
         const fileCount = document.getElementById("fileCount");
         const dropZone = document.getElementById("dropZone");
-        const downloadBtn = document.querySelector(".btn-primary");
+        const cameraBtn = document.getElementById("cameraBtn");
+        const cameraOverlay = document.getElementById("cameraOverlay");
+        const cameraVideo = document.getElementById("cameraVideo");
+        const capturePhotoBtn = document.getElementById("capturePhotoBtn");
+        const closeCameraBtn = document.getElementById("closeCameraBtn");
+        const downloadBtn = document.getElementById("generateBtn");
         const statusMessage = document.getElementById("statusMessage");
         const previewLabel = document.getElementById("previewLabel");
 
         let filesArray = [];
         let processedImages = [];
         let originalImages = [];
+        let cameraStream = null;
 
         function renderPreviews() {
             previewGrid.innerHTML = "";
@@ -1022,6 +1109,74 @@
         dropZone.addEventListener("click", function() {
             fileInput.click();
         });
+
+        cameraBtn.addEventListener("click", function() {
+            openCamera();
+        });
+
+        capturePhotoBtn.addEventListener("click", async function() {
+            if (!cameraStream) return;
+
+            const width = cameraVideo.videoWidth || 1280;
+            const height = cameraVideo.videoHeight || 720;
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(cameraVideo, 0, 0, width, height);
+
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.95));
+            if (!blob) {
+                alert("Unable to capture photo. Please try again.");
+                return;
+            }
+
+            const timestamp = Date.now();
+            const file = new File([blob], `captured-bill-${timestamp}.jpg`, { type: "image/jpeg" });
+            addFiles([file]);
+            closeCamera();
+            statusMessage.style.display = 'block';
+            statusMessage.textContent = '✅ Photo added. Ready to generate PDF.';
+            setTimeout(() => { statusMessage.style.display = 'none'; }, 2200);
+        });
+
+        closeCameraBtn.addEventListener("click", function() {
+            closeCamera();
+        });
+
+        cameraOverlay.addEventListener("click", function(e) {
+            if (e.target === cameraOverlay) {
+                closeCamera();
+            }
+        });
+
+        function openCamera() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert("Camera access is not supported in this browser.");
+                return;
+            }
+
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+                .then(stream => {
+                    cameraStream = stream;
+                    cameraVideo.srcObject = stream;
+                    cameraOverlay.style.display = 'flex';
+                    cameraVideo.play().catch(() => {});
+                })
+                .catch(err => {
+                    console.error("Camera error:", err);
+                    alert("Unable to access camera. Make sure permission is allowed and try again.");
+                });
+        }
+
+        function closeCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            cameraVideo.srcObject = null;
+            cameraOverlay.style.display = 'none';
+        }
 
         function showLoadingOverlay(message) {
             const overlay = document.getElementById('loadingOverlay');
