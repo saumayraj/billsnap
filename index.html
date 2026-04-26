@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BillSnap Pro</title>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="vendor/jspdf.umd.min.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@700;800&display=swap');
+        /* Offline-safe fonts */
 
         * {
             margin: 0;
@@ -27,7 +27,7 @@
             padding: 40px 60px;
             color: white;
             gap: 80px;
-            font-family: 'Inter', sans-serif;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             position: relative;
             overflow-y: auto;
             min-height: auto;
@@ -351,6 +351,7 @@
 
         .preview-item {
             position: relative;
+            z-index: 0;
             border-radius: 18px;
             overflow: hidden;
             aspect-ratio: 1;
@@ -359,6 +360,32 @@
             transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             animation: itemAppear 0.5s ease-out;
+        }
+
+        .preview-remove {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(15, 23, 42, 0.95);
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+            transition: transform 0.2s ease, background 0.2s ease;
+            z-index: 3;
+            pointer-events: auto;
+        }
+
+        .preview-remove:hover {
+            transform: scale(1.05);
+            background: rgba(239, 68, 68, 0.95);
         }
 
         @keyframes itemAppear {
@@ -444,6 +471,49 @@
             left: 100%;
         }
 
+        .btn .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 10px;
+            vertical-align: middle;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 15, 44, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+        }
+
+        .loading-card {
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(79, 172, 254, 0.35);
+            border-radius: 24px;
+            padding: 28px 34px;
+            text-align: center;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+        }
+
+        .loading-text {
+            margin-top: 18px;
+            color: #e0e7ff;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         .status-badge {
             display: inline-block;
             padding: 6px 12px;
@@ -505,6 +575,23 @@
 
             .features {
                 grid-template-columns: 1fr;
+            }
+
+            .auth-card {
+                width: 100%;
+                padding: 32px 24px;
+            }
+
+            .topbar {
+                padding: 0 16px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+                height: auto;
+            }
+
+            .btn-container {
+                flex-direction: column;
             }
         }
 
@@ -621,13 +708,14 @@
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        .topbar-right { display: flex; align-items: center; gap: 20px; }
+        .topbar-right { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
         .topbar-user { font-size: 13px; color: #94a3b8; }
-        .topbar-nav { display: flex; gap: 8px; }
+        .topbar-nav { display: flex; gap: 8px; flex-wrap: wrap; }
         .nav-btn {
             padding: 8px 18px; border-radius: 10px; font-size: 13px;
             font-weight: 600; cursor: pointer; transition: all 0.25s;
             font-family: 'Inter', sans-serif; border: none;
+            min-width: 0;
         }
         .nav-btn-ghost {
             background: rgba(255,255,255,0.06);
@@ -676,6 +764,13 @@
     </div>
 
     <!-- ===== TOP NAV BAR ===== -->
+    <div class="loading-overlay" id="loadingOverlay" style="display:none;">
+        <div class="loading-card">
+            <div class="spinner"></div>
+            <div class="loading-text" id="loadingText">Preparing your PDF...</div>
+        </div>
+    </div>
+
     <div class="topbar hidden" id="topbar">
         <div class="topbar-brand">✨ BillSnap Pro</div>
         <div class="topbar-right">
@@ -683,12 +778,11 @@
             <div class="topbar-nav">
                 <button class="nav-btn nav-btn-ghost active-view" id="navScanner" onclick="showView('scanner')">📸 Scanner</button>
                 <button class="nav-btn nav-btn-ghost" id="navDashboard" onclick="showView('dashboard')">📊 Dashboard</button>
-                <button class="nav-btn nav-btn-logout" onclick="logout()">Logout</button>
+                <button class="nav-btn nav-btn-logout" id="navLogout" onclick="logout()">Logout</button>
             </div>
         </div>
     </div>
 
-<body>
     <div class="container">
         <div class="left">
             <span class="logo">✨ BillSnap Pro</span>
@@ -735,7 +829,10 @@
                     </div>
                     
                     <div class="btn-container">
-                        <button class="btn btn-primary">⬇️ Generate PDF</button>
+                        <button class="btn btn-primary" id="generateBtn">⬇️ Generate PDF</button>
+                    </div>
+                    <div class="status-message" id="statusMessage" style="margin-top:16px;font-size:14px;color:#cbd5e1;display:none;">
+                        ⏳ Waiting for files...
                     </div>
                 </div>
             </div>
@@ -808,10 +905,10 @@
         </div>
 
         <div class="dash-period-tabs">
-            <button class="period-tab active" onclick="loadDashboard('daily')">Today</button>
-            <button class="period-tab" onclick="loadDashboard('weekly')">This Week</button>
-            <button class="period-tab" onclick="loadDashboard('monthly')">This Month</button>
-            <button class="period-tab" onclick="loadDashboard('yearly')">This Year</button>
+            <button class="period-tab active" data-period="daily" onclick="loadDashboard('daily')">Today</button>
+            <button class="period-tab" data-period="weekly" onclick="loadDashboard('weekly')">This Week</button>
+            <button class="period-tab" data-period="monthly" onclick="loadDashboard('monthly')">This Month</button>
+            <button class="period-tab" data-period="yearly" onclick="loadDashboard('yearly')">This Year</button>
         </div>
 
         <div class="dash-stat-row" id="dashStats">
@@ -840,6 +937,7 @@
         const fileCount = document.getElementById("fileCount");
         const dropZone = document.getElementById("dropZone");
         const downloadBtn = document.querySelector(".btn-primary");
+        const statusMessage = document.getElementById("statusMessage");
         const previewLabel = document.getElementById("previewLabel");
 
         let filesArray = [];
@@ -857,11 +955,20 @@
                 div.className = "preview-item";
 
                 div.innerHTML = `
+                    <button type="button" class="preview-remove" onmousedown="event.stopPropagation()" onclick="event.stopPropagation(); removeFile(${index})">×</button>
                     <img src="${src}" alt="preview">
                 `;
 
                 previewGrid.appendChild(div);
             });
+        }
+
+        function removeFile(index) {
+            if (index < 0 || index >= processedImages.length) return;
+            filesArray.splice(index, 1);
+            processedImages.splice(index, 1);
+            originalImages.splice(index, 1);
+            renderPreviews();
         }
 
         function addFiles(files) {
@@ -915,6 +1022,18 @@
         dropZone.addEventListener("click", function() {
             fileInput.click();
         });
+
+        function showLoadingOverlay(message) {
+            const overlay = document.getElementById('loadingOverlay');
+            const text = document.getElementById('loadingText');
+            overlay.style.display = 'flex';
+            text.textContent = message;
+        }
+
+        function hideLoadingOverlay() {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.style.display = 'none';
+        }
 
         function autoCropAndScan(img) {
             const fullCanvas = document.createElement("canvas");
@@ -1091,8 +1210,10 @@
             }
 
             downloadBtn.disabled = true;
+            statusMessage.style.display = 'block';
+            statusMessage.textContent = '⏳ Preparing images...';
             const originalText = downloadBtn.textContent;
-            downloadBtn.textContent = "⏳ Generating...";
+            downloadBtn.innerHTML = '<span class="spinner"></span>Generating...';
 
             try {
                 // Save to backend if logged in
@@ -1120,11 +1241,13 @@
                         }
                     } catch(e) {
                         console.warn('Cloud save failed (offline mode):', e);
-                        downloadBtn.textContent = "📴 Offline — generating PDF...";
+                        downloadBtn.innerHTML = '<span class="spinner"></span>📴 Offline — generating PDF...';
+                        statusMessage.textContent = 'Offline mode: generating PDF locally...';
                         await new Promise(r => setTimeout(r, 600));
                     }
                     downloadBtn.style.background = "";
-                    downloadBtn.textContent = "⏳ Generating PDF...";
+                    downloadBtn.innerHTML = '<span class="spinner"></span>Generating PDF...';
+                    statusMessage.textContent = '⏳ Generating PDF...';
                 }
                 const { jsPDF } = window.jspdf;
                 const pdf = new jsPDF({
@@ -1169,13 +1292,20 @@
                 const date = new Date().toISOString().split("T")[0];
                 pdf.save(`BillSnap_${date}.pdf`);
                 
-                alert("✅ PDF generated successfully!");
+                statusMessage.textContent = '✅ PDF generated successfully!';
+                hideLoadingOverlay();
+                await new Promise(r => setTimeout(r, 900));
             } catch (error) {
                 console.error("Error:", error);
+                statusMessage.textContent = '❌ Error generating PDF: ' + error.message;
+                hideLoadingOverlay();
                 alert("❌ Error generating PDF: " + error.message);
             } finally {
                 downloadBtn.disabled = false;
                 downloadBtn.textContent = originalText;
+                setTimeout(() => {
+                    statusMessage.style.display = 'none';
+                }, 1800);
             }
         });
     </script>
@@ -1191,6 +1321,19 @@
 
     // ── Boot ─────────────────────────────────────────────────────
     (function boot() {
+        document.getElementById('navScanner').addEventListener('click', function(e) {
+            e.preventDefault();
+            showView('scanner');
+        });
+        document.getElementById('navDashboard').addEventListener('click', function(e) {
+            e.preventDefault();
+            showView('dashboard');
+        });
+        document.getElementById('navLogout').addEventListener('click', function(e) {
+            e.preventDefault();
+            logout();
+        });
+
         if (authToken && currentUser) {
             showApp();
         }
@@ -1305,8 +1448,9 @@
         activePeriod = period;
 
         // Update tab styling
-        document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
-        event?.target?.classList.add('active');
+        document.querySelectorAll('.period-tab').forEach(t => {
+            t.classList.toggle('active', t.dataset.period === period);
+        });
 
         document.getElementById('dashStats').innerHTML = '<div class="dash-loading">⏳ Loading stats...</div>';
         document.getElementById('categoryChart').innerHTML = '<div class="dash-loading">⏳ Loading...</div>';
@@ -1394,7 +1538,20 @@
             </div>
         `).join('');
     }
-    </script>
 
+    window.showView = showView;
+    window.logout = logout;
+    window.loadDashboard = loadDashboard;
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof showView === 'function') {
+                document.getElementById('navDashboard')?.addEventListener('click', () => showView('dashboard'));
+            }
+            if (typeof logout === 'function') {
+                document.getElementById('navLogout')?.addEventListener('click', () => logout());
+            }
+        });
+    </script>
 </body>
 </html>
