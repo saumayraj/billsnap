@@ -1375,7 +1375,10 @@
 
                         const formData = new FormData();
                         filesArray.forEach(f => formData.append('images', f));
-                        const saveRes = await fetch('http://localhost:5000/api/bills/upload', {
+                        
+                        // Use dynamic API base
+                        const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5000/api' : '/api';
+                        const saveRes = await fetch(`${apiBase}/bills/upload`, {
                             method: 'POST',
                             headers: { 'x-auth-token': authToken },
                             body: formData
@@ -1464,7 +1467,7 @@
     // ============================================================
     // AUTH & DASHBOARD LOGIC
     // ============================================================
-    const API = 'http://localhost:5000/api';
+    const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5000/api' : '/api';
     let authToken = localStorage.getItem('bs_token') || null;
     let currentUser = JSON.parse(localStorage.getItem('bs_user') || 'null');
     let authMode = 'login';
