@@ -513,20 +513,7 @@
             justify-content: flex-end;
         }
 
-        .camera-note {
-            color: #cbd5e1;
-            font-size: 14px;
-            text-align: right;
-        }
-
-        .btn-container {
-            margin-top: 35px;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .btn {
+        .btn::before {
             content: '';
             position: absolute;
             top: 0;
@@ -541,7 +528,8 @@
             left: 100%;
         }
 
-        .btn .spinner {
+        .btn .spinner,
+        .spinner {
             width: 18px;
             height: 18px;
             border: 2px solid rgba(255, 255, 255, 0.4);
@@ -551,6 +539,13 @@
             margin-right: 10px;
             vertical-align: middle;
             animation: spin 1s linear infinite;
+        }
+
+        .loading-card .spinner {
+            width: 40px;
+            height: 40px;
+            border-width: 3px;
+            margin-right: 0;
         }
 
         .loading-overlay {

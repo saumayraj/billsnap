@@ -59,12 +59,53 @@ Backend API: http://localhost:5000
 | GET | /api/expenses | Get expenses (filterable) |
 | GET | /api/expenses/summary/:period | Expense summary |
 
-## Deployment (Vercel)
+## Deployment
+
+### Vercel
+
+1. Install the Vercel CLI if you want to deploy from your machine:
 ```bash
-npm i -g vercel
-vercel
+npm install -g vercel
 ```
-Set environment variables in Vercel dashboard matching `.env.example`.
+2. Run the deployment command from the project root:
+```bash
+vercel --prod
+```
+3. In the Vercel dashboard for this project, add these environment variables:
+- `MONGODB_URI`
+- `JWT_SECRET`
+- `EMAIL_USER`
+- `EMAIL_PASSWORD`
+- `GOOGLE_DRIVE_CLIENT_ID`
+- `GOOGLE_DRIVE_CLIENT_SECRET`
+
+You can also use `.env.example` as the template for your local environment.
+
+### GitHub + Vercel Continuous Deployment
+
+This repository is ready for GitHub-based deployment using a GitHub Actions workflow. Push your code to GitHub, then set these repository secrets:
+- `VERCEL_TOKEN`
+- `VERCEL_ORG_ID`
+- `VERCEL_PROJECT_ID`
+
+The workflow at `.github/workflows/vercel-deploy.yml` will deploy to Vercel automatically on pushes to `main`.
+
+### Offline / Local Use
+
+This app now includes a local `vendor/jspdf.umd.min.js` bundle so PDF generation works without internet access.
+
+To run locally without network access:
+1. Install dependencies once with:
+```bash
+npm install
+```
+2. Start the backend server locally:
+```bash
+npm run dev
+```
+3. Open the app in your browser at `http://localhost:8080`.
+
+If you only need local scanning and PDF export, the frontend can also open directly from `index.html` in a browser without CDN access. Backend features such as login, expense tracking, and cloud save still require a local server.
 
 ## License
 MIT
