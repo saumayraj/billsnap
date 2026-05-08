@@ -648,7 +648,7 @@
             }
 
             .topbar {
-                padding: 0 16px;
+                padding: 16px;
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 12px;
@@ -793,6 +793,10 @@
 
         /* Push page content below topbar */
         body.logged-in { padding-top: 80px; }
+
+        @media(max-width:768px) {
+            body.logged-in { padding-top: 180px; }
+        }
     </style>
 </head>
 <body>
