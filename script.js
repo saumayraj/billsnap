@@ -1,179 +1,116 @@
-// ===============================
-// GLOBAL VARIABLES
-// ===============================
+```js
+import jsPDF from "jspdf";
+
+// ============================
+// BILLSNAP SCRIPT.JS
+// ============================
+
+const fileInput = document.getElementById("fileInput");
+const previewContainer = document.getElementById("previewContainer");
+const generateBtn = document.getElementById("generatePDF");
+
 let processedImages = [];
 
-// ===============================
-// FILE INPUT HANDLING
-// ===============================
-const fileInput = document.getElementById("fileInput");
-const previewContainer = document.getElementById("preview");
+// ============================
+// IMAGE UPLOAD + PREVIEW
+// ============================
 
-fileInput.addEventListener("change", handleFiles);
+fileInput.addEventListener("change", async (e) => {
+  const files = e.target.files;
 
-function handleFiles() {
-  const files = fileInput.files;
-  processedImages = [];
+  if (!files.length) {
+    alert("No files selected");
+    return;
+  }
+
   previewContainer.innerHTML = "";
+  processedImages = [];
 
-  if (files.length === 0) return;
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
 
-  document.getElementById("fileCount").innerText = files.length + " files selected";
+    const base64 = await convertToBase64(file);
 
-  Array.from(files).forEach(file => {
-    const img = new Image();
-    img.src = URL.createObjectURL(file);
+    processedImages.push(base64);
 
-    img.onload = () => {
-      const cropped = autoCropImage(img);
+    // Preview Image
+    const img = document.createElement("img");
+    img.src = base64;
 
-      processedImages.push(cropped);
+    img.style.width = "120px";
+    img.style.height = "160px";
+    img.style.objectFit = "cover";
+    img.style.borderRadius = "12px";
+    img.style.margin = "10px";
+    img.style.border = "2px solid #4da3ff";
 
-      // Show preview
-      const previewImg = document.createElement("img");
-      previewImg.src = cropped;
-      previewImg.style.width = "120px";
-      previewImg.style.margin = "10px";
-      previewContainer.appendChild(previewImg);
+    previewContainer.appendChild(img);
+  }
+
+  console.log("Processed Images:", processedImages);
+});
+
+// ============================
+// CONVERT IMAGE TO BASE64
+// ============================
+
+function convertToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.readAsDataURL(file);
+
+    reader.onload = () => {
+      resolve(reader.result);
+    };
+
+    reader.onerror = (error) => {
+      reject(error);
     };
   });
 }
 
-// ===============================
-// AUTO CROP FUNCTION
-// ===============================
-function autoCropImage(img) {
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
+// ============================
+// GENERATE PDF
+// ============================
 
-  canvas.width = img.width;
-  canvas.height = img.height;
+generateBtn.addEventListener("click", generatePDF);
 
-  ctx.drawImage(img, 0, 0);
-
-  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const data = imageData.data;
-
-  let top = 0, bottom = canvas.height;
-  let left = 0, right = canvas.width;
-
-  const threshold = 240;
-
-  // TOP
-  for (let y = 0; y < canvas.height; y++) {
-    let isWhite = true;
-    for (let x = 0; x < canvas.width; x++) {
-      const i = (y * canvas.width + x) * 4;
-      const avg = (data[i] + data[i+1] + data[i+2]) / 3;
-      if (avg < threshold) {
-        isWhite = false;
-        break;
-      }
-    }
-    if (!isWhite) {
-      top = y;
-      break;
-    }
-  }
-
-  // BOTTOM
-  for (let y = canvas.height - 1; y >= 0; y--) {
-    let isWhite = true;
-    for (let x = 0; x < canvas.width; x++) {
-      const i = (y * canvas.width + x) * 4;
-      const avg = (data[i] + data[i+1] + data[i+2]) / 3;
-      if (avg < threshold) {
-        isWhite = false;
-        break;
-      }
-    }
-    if (!isWhite) {
-      bottom = y;
-      break;
-    }
-  }
-
-  // LEFT
-  for (let x = 0; x < canvas.width; x++) {
-    let isWhite = true;
-    for (let y = 0; y < canvas.height; y++) {
-      const i = (y * canvas.width + x) * 4;
-      const avg = (data[i] + data[i+1] + data[i+2]) / 3;
-      if (avg < threshold) {
-        isWhite = false;
-        break;
-      }
-    }
-    if (!isWhite) {
-      left = x;
-      break;
-    }
-  }
-
-  // RIGHT
-  for (let x = canvas.width - 1; x >= 0; x--) {
-    let isWhite = true;
-    for (let y = 0; y < canvas.height; y++) {
-      const i = (y * canvas.width + x) * 4;
-      const avg = (data[i] + data[i+1] + data[i+2]) / 3;
-      if (avg < threshold) {
-        isWhite = false;
-        break;
-      }
-    }
-    if (!isWhite) {
-      right = x;
-      break;
-    }
-  }
-
-  const width = right - left;
-  const height = bottom - top;
-
-  const newCanvas = document.createElement("canvas");
-  newCanvas.width = width;
-  newCanvas.height = height;
-
-  const newCtx = newCanvas.getContext("2d");
-
-  // Scanner effect
-  newCtx.filter = "grayscale(100%) contrast(160%) brightness(110%)";
-
-  newCtx.drawImage(
-    canvas,
-    left, top, width, height,
-    0, 0, width, height
-  );
-
-  return newCanvas.toDataURL("image/jpeg", 0.9);
-}
-
-// ===============================
-// PDF GENERATION
-// ===============================
 async function generatePDF() {
-  if (processedImages.length === 0) {
-    alert("Please upload images first!");
-    return;
+  try {
+    if (!processedImages || processedImages.length === 0) {
+      alert("No images uploaded!");
+      return;
+    }
+
+    generateBtn.innerText = "Preparing PDF...";
+
+    const pdf = new jsPDF();
+
+    for (let i = 0; i < processedImages.length; i++) {
+      const img = processedImages[i];
+
+      if (!img) continue;
+
+      if (i !== 0) {
+        pdf.addPage();
+      }
+
+      pdf.addImage(img, "JPEG", 10, 10, 190, 250);
+    }
+
+    pdf.save("BillSnap.pdf");
+
+    generateBtn.innerText = "PDF Downloaded ✅";
+
+    alert("PDF Generated Successfully!");
+
+  } catch (error) {
+    console.error(error);
+
+    alert("PDF Error: " + error.message);
+
+    generateBtn.innerText = "Generate PDF";
   }
-
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF();
-
-  for (let i = 0; i < processedImages.length; i++) {
-    const img = processedImages[i];
-
-    if (i !== 0) pdf.addPage();
-
-    pdf.addImage(img, "JPEG", 10, 10, 190, 0);
-  }
-
-  pdf.save("BillSnap.pdf");
-
-  alert("✅ PDF Downloaded Successfully!");
 }
-
-// ===============================
-// BUTTON CLICK
-// ===============================
-document.getElementById("downloadBtn").addEventListener("click", generatePDF);
+```
